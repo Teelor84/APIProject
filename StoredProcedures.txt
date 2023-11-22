@@ -1,0 +1,71 @@
+REGISTRATION UPSERT 
+CREATE OR ALTER PROCEDURE [ProjectSchema].[userRegistration_Upsert]
+    @Email NVARCHAR(50),
+    @PasswordHash VARBINARY(MAX),
+    @PasswordSalt VARBInARY(MAX)
+AS
+BEGIN 
+    IF NOT EXISTS (SELECT * FROM ProjectTable WHERE Email = @Email)
+        BEGIN
+            INSERT INTO ProjectSchema.AuthTable(
+                [Email],
+                [PasswordHash],
+                [PasswordSalt]
+            )   VALUES (
+                @Email,
+                @PasswordHash,
+                @PasswordSalt
+            )
+        END
+    ELSE 
+        BEGIN 
+            UPDATE ProjectSchema.AuthTable
+                SET PasswordHash = @PasswordHash,
+                    PasswordSalt = @PasswordSalt
+                WHERE Email = @Email
+        END
+END
+GO
+
+USER UPSERT
+CREATE OR ALTER PROCEDURE ProjectSchema.user_Upsert
+    @UserId INT = NULL,
+    @Email NVARCHAR(50),
+    @Password NVARCHAR(50)
+AS
+BEGIN 
+    IF NOT EXISTS (SELECT * FROM ProjectSchema.ProjectTable WHERE UserId = @UserId)
+        BEGIN
+        DECLARE @OutputUserId INT
+        IF NOT EXISTS (SELECT * FROM ProjectSchema.ProjectTable WHERE Email = @Email)
+            INSERT INTO ProjectSchema.ProjectTable(
+                [Email],
+                [Password]
+                )   
+            VALUES (
+                @Email,
+                @Password
+            )
+            SET @OutputUserId = @@IDENTITY
+        END
+    ELSE 
+        BEGIN 
+            UPDATE ProjectSchema.ProjectTable
+                SET Email = @Email,
+                    Password = @Password
+                WHERE Email = @Email
+        END
+END
+GO
+
+LOGIN CONFIRMATION GET
+CREATE OR ALTER PROCEDURE ProjectSchema.LoginConfirmation_Get
+    @Email NVARCHAR(50)
+AS 
+BEGIN 
+    SELECT 
+        [PasswordHash],
+        [PasswordSalt]
+    FROM ProjectSchema.AuthTable AS Auth
+        WHERE Auth.Email = @Email
+END
